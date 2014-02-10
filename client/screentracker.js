@@ -1,20 +1,66 @@
 ScreenTracker = {
   websocket: null,
-  wsUri: "ws://localhost:9999",
-  init: function() {
+  config: {
+    wsUri: "ws://localhost:9999", 
+
+  },
+  init: function(options) {
             var self = this;
-            self.websocket = new WebSocket(self.wsUri);
+            if(options != null){
+              for(i in options){
+                self.config[i] = options[i];
+              }
+            }
+            self.websocket = new WebSocket(self.config.wsUri);
             self.websocket.onopen = function(evt) {self.onOpen(evt) };
             //self.websocket.onclose = function(evt) { self.onClose(evt) };
             self.websocket.onmessage = function(evt) { self.onMessage(evt) };
             self.websocket.onerror = function(evt) { self.onError(evt) };
   },
+  getWindowSize: function() {
+  var docEl = document.documentElement,
+      IS_BODY_ACTING_ROOT = docEl && docEl.clientHeight === 0;
+
+  // Used to feature test Opera returning wrong values 
+  // for documentElement.clientHeight. 
+  function isDocumentElementHeightOff () { 
+      var d = document,
+          div = d.createElement('div');
+      div.style.height = "2500px";
+      d.body.insertBefore(div, d.body.firstChild);
+      var r = d.documentElement.clientHeight > 2400;
+      d.body.removeChild(div);
+      return r;
+  }
+
+  if (typeof document.clientWidth == "number") {
+     return function () {
+       return { width: document.clientWidth, height: document.clientHeight };
+     };
+  } else if (IS_BODY_ACTING_ROOT || isDocumentElementHeightOff()) {
+      var b = document.body;
+      return function () {
+        return { width: b.clientWidth, height: b.clientHeight };
+      };
+  } else {
+      return function () {
+        return { width: docEl.clientWidth, height: docEl.clientHeight };
+      };
+  }
+},
   onOpen: function(evt) {
     var self = this;
     self.trackerLog("CONNECTED");
-    uuid = self.createUUID();
+    if(self.config.id == undefined){
+      uuid = self.createUUID();
+    } else{
+      uuid = self.config.id;
+    }
+
     window.onmousemove = function(ev){
-      self.websocket.send(JSON.stringify({uuid: uuid, date: (new Date()).getTime(), x: ev.clientX,  y:ev.clientY}));
+      var size = self.getWindowSize();
+      var w = size().width, h= size().height;
+      self.websocket.send(JSON.stringify({uuid: uuid, date: (new Date()).getTime(), x: ev.clientX,  y:ev.clientY, width: w, height: h}));
     }
   },
   onClose: function(evt) {
@@ -54,4 +100,5 @@ ScreenTracker = {
     return uuid;
   }
 }
-ScreenTracker.init();
+
+//ScreenTracker.init();
