@@ -2,7 +2,7 @@ ScreenTracker = {
   websocket: null,
   config: {
     wsUri: "ws://localhost:9999", 
-
+    catcheableElements: {},
   },
   init: function(options) {
             var self = this;
@@ -57,11 +57,35 @@ ScreenTracker = {
       uuid = self.config.id;
     }
 
-    window.onmousemove = function(ev){
+    window.addEventListener('mousemove', function(ev){
       var size = self.getWindowSize();
       var w = size().width, h= size().height;
-      self.websocket.send(JSON.stringify({uuid: uuid, date: (new Date()).getTime(), x: ev.clientX,  y:ev.clientY, width: w, height: h}));
+      self.websocket.send(JSON.stringify({uuid: uuid, event: "position", date: (new Date()).getTime(), x: ev.clientX,  y:ev.clientY, width: w, height: h}));
+    });
+    window.addEventListener('click', function(ev){
+      self.websocket.send(JSON.stringify({uuid: uuid, event: "click", date: (new Date()).getTime()}));
+    });
+    window.addEventListener('dblclick', function(ev){
+      self.websocket.send(JSON.stringify({uuid: uuid, event: "doubleclick", date: (new Date()).getTime()}));
+    });
+    for(eventType in self.config.catcheableElements) {
+      var event = self.config.catcheableElements[eventType];
+      for(i in event) {
+        elem = event[i];
+        myList = document.querySelectorAll(elem);
+        for (var i = 0; i < myList.length; ++i) {
+          var item = myList[i];
+          item.addEventListener(eventType, self._injectEvent.bind(self, eventType, elem));
+        }
+      }      
     }
+
+  },
+  _injectEvent: function(eventType, item){
+      var self = this;
+      console.log(this);      
+      console.log(eventType, item);
+      self.websocket.send(JSON.stringify({uuid: uuid, event: eventType, element: item, date: (new Date()).getTime()}));
   },
   onClose: function(evt) {
     var self = this;

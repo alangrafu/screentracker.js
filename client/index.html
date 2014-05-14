@@ -2,11 +2,33 @@
 <html>
 <head>
 	<meta charset="utf-8" />
+	<style>
+	div{
+		width: 200px;
+		height:150px;
+		width: 50%;
+		border: 1px solid black;
+		margin: 20px;
+		background :orangered;
+	}
+	.chao{
+		background: steelblue;
+	}
+	</style>
 </head>
 <body>
 <div>Hola</div>
-<div>Chao</div>
+<div class="chao">Chao</div>
 <script src='screentracker.js'></script>
-
+<script>
+sc = ScreenTracker;
+var config = {
+				catcheableElements: {
+					"mouseover": ["div"],
+					"click": [".chao"]
+				}
+			};
+sc.init(config);
+</script>
 </body>
 </html>
